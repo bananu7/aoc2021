@@ -62,3 +62,33 @@ main_4 =
     print
 
 
+-- day 3 part 1
+
+popcount :: [String] -> (Int, [Int])
+popcount ls = (length ls, foldl (zipWith add) iv ls)
+    where
+        add i '0' = i
+        add i '1' = i+1
+        iv = replicate w 0
+        w = length . head $ ls
+
+compute :: (Int, [Int]) -> Int
+compute (n, v) = ɣ * ε
+    where
+        ɣ = binToDec . map common $ v
+        ε = binToDec . map uncommon $ v
+
+        common 0 = False -- popcount 0 means 0 is the most common
+        common i = if i > n `div` 2 then True else False
+        uncommon 0 = False
+        uncommon i = if i > n `div` 2 then False else True
+
+binToDec :: [Bool] -> Int
+binToDec = foldr (\x y -> fromEnum x + 2*y) 0 . reverse
+
+main_3_1 = 
+    readFile "src/input_3.txt" >>=
+    print . compute . popcount . lines
+
+
+
