@@ -152,9 +152,6 @@ type BingoRow = [Int]
 data BingoBoard = BingoBoard [BingoRow] deriving (Show, Eq) --10x5
 
 data CrossResult = Victory Int | StillPlaying BingoBoard deriving (Show, Eq)
-isVictory :: CrossResult -> Bool
-isVictory (Victory _) = True
-isVictory (StillPlaying _) = False
 
 cross :: Int -> BingoBoard -> CrossResult
 cross x (BingoBoard rows) = checkVictory x (BingoBoard rows')
@@ -185,13 +182,54 @@ splitInput :: [String] -> [[String]]
 splitInput [] = []
 splitInput xs = (take 5 . drop 1 $ xs) : (splitInput $ drop 6 xs)
 
+play results (x:numbers) = 
+    case findVictory results of
+        Just score -> score
+        Nothing -> play results' numbers
+    where
+        results' =  map (cross x . getBoard) $ results
+
+        findVictory :: [CrossResult] -> Maybe Int
+        findVictory [] = Nothing
+        findVictory (Victory x : _) = Just x
+        findVictory (StillPlaying _ : r) = findVictory r 
+
+        getBoard (StillPlaying b) = b
 
 main_4_1 = do
-    ls <- lines <$> readFile "src/input_4_test.txt"
+    ls <- lines <$> readFile "src/input_4.txt"
     let numbers = readNumbers $ head ls
     let boards = map readBoard . splitInput $ tail ls
 
-    --print boards
-    print $ map (cross (head numbers)) boards
+    let score = play (map StillPlaying boards) numbers
+    print score
 
+-- day 4 part 2
 
+play2 [lastBoard] (x:numbers) = 
+    case lastBoard of
+        Victory score -> score
+        StillPlaying b -> play [cross x b] numbers
+
+play2 results (x:numbers) = play2 results'' numbers
+    where
+        results'' = filter isPlaying results'
+        isPlaying (StillPlaying _) = True
+        isPlaying (Victory _) = False
+
+        results' =  map (cross x . getBoard) $ results
+
+        findVictory :: [CrossResult] -> Maybe Int
+        findVictory [] = Nothing
+        findVictory (Victory x : _) = Just x
+        findVictory (StillPlaying _ : r) = findVictory r 
+
+        getBoard (StillPlaying b) = b
+
+main_4_2 = do
+    ls <- lines <$> readFile "src/input_4.txt"
+    let numbers = readNumbers $ head ls
+    let boards = map readBoard . splitInput $ tail ls
+
+    let score = play2 (map StillPlaying boards) numbers
+    print score
