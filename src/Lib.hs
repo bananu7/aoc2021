@@ -1,6 +1,9 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Lib where
 
 import Debug.Trace
+import Data.List
 
 -- day 1 part 1
 test_1 :: [Int]
@@ -140,3 +143,49 @@ compCo2 len x =
 main_3_2 = 
     readFile "src/input_3.txt" >>=
     print . compute2 . lines
+
+-- day 4 part 1
+
+type BingoRow = [Int]
+-- don't need cols, can keep 10x5 because score will be divided by 2
+-- because each number will appear twice
+data BingoBoard = BingoBoard [BingoRow] deriving (Show, Eq) --10x5
+
+data CrossResult = Victory Int | StillPlaying BingoBoard deriving (Show, Eq)
+isVictory :: CrossResult -> Bool
+isVictory (Victory _) = True
+isVictory (StillPlaying _) = False
+
+cross :: BingoBoard -> Int -> CrossResult
+cross (BingoBoard rows) x = checkVictory (BingoBoard rows') x
+    where
+        rows' = map crossRow rows
+        crossRow r = filter (/= x) r
+
+checkVictory :: BingoBoard -> Int -> CrossResult
+checkVictory (BingoBoard rows) x = 
+    if (length . filter null $ rows) > 0 then
+        Victory ((*x) . (`div` 2) . sum . map sum $ rows)
+    else
+        StillPlaying $ BingoBoard rows
+
+
+-- needs to be 5 strings
+readBoard :: [String] -> BingoBoard
+readBoard xs = BingoBoard $ numerical ++ transpose numerical
+    where
+        numerical = map (map read . words) $ xs
+
+splitInput :: [String] -> [[String]]
+splitInput [] = []
+splitInput xs = (take 5 . drop 1 $ xs) : (splitInput $ drop 6 xs)
+
+
+main_4_1 = do
+    ls <- lines <$> readFile "src/input_4_test.txt"
+    let numbers :: [Int] = map read . words $ head ls
+    let boards = map readBoard . splitInput $ tail ls
+
+    print boards
+
+
