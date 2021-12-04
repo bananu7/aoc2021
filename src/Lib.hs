@@ -156,19 +156,24 @@ isVictory :: CrossResult -> Bool
 isVictory (Victory _) = True
 isVictory (StillPlaying _) = False
 
-cross :: BingoBoard -> Int -> CrossResult
-cross (BingoBoard rows) x = checkVictory (BingoBoard rows') x
+cross :: Int -> BingoBoard -> CrossResult
+cross x (BingoBoard rows) = checkVictory x (BingoBoard rows')
     where
         rows' = map crossRow rows
         crossRow r = filter (/= x) r
 
-checkVictory :: BingoBoard -> Int -> CrossResult
-checkVictory (BingoBoard rows) x = 
+checkVictory :: Int -> BingoBoard -> CrossResult
+checkVictory x (BingoBoard rows) = 
     if (length . filter null $ rows) > 0 then
         Victory ((*x) . (`div` 2) . sum . map sum $ rows)
     else
         StillPlaying $ BingoBoard rows
 
+readNumbers :: String -> [Int]
+readNumbers = map read . words . map commaToSpace
+  where
+    commaToSpace ',' = ' '
+    commaToSpace x = x
 
 -- needs to be 5 strings
 readBoard :: [String] -> BingoBoard
@@ -183,9 +188,10 @@ splitInput xs = (take 5 . drop 1 $ xs) : (splitInput $ drop 6 xs)
 
 main_4_1 = do
     ls <- lines <$> readFile "src/input_4_test.txt"
-    let numbers :: [Int] = map read . words $ head ls
+    let numbers = readNumbers $ head ls
     let boards = map readBoard . splitInput $ tail ls
 
-    print boards
+    --print boards
+    print $ map (cross (head numbers)) boards
 
 
