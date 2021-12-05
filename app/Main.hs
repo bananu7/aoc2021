@@ -3,4 +3,4 @@ module Main where
 import Day5
 
 main :: IO ()
-main = main_5_1
+main = main_5_2

@@ -1,17 +1,17 @@
 --module Day5 (main_5_1, main_5_2, rangeOverlap) where
 module Day5 where
 
-import Data.Array
-import Control.Monad.ST
-import Data.STRef
 import Data.Char (isDigit)
-import Data.List (nub)
+import Data.List (nub, intersect)
 
 import Debug.Trace
 -- array                   :: (Ix a) => (a,a) -> [(a,b)] -> Array a b
 
 type Point = (Int, Int)
-data Line = HorizontalLine (Int, Int) Int | VerticalLine Int (Int, Int) | DiagonalLine deriving (Eq, Show)
+data Line =
+    HorizontalLine (Int, Int) Int |
+    VerticalLine Int (Int, Int) |
+    DiagonalLine (Int, Int) (Int, Int) deriving (Eq, Show)
 
 parse :: String -> Line
 parse s = 
@@ -22,7 +22,7 @@ parse s =
             else if x1 == x2
                 then VerticalLine x1 (min y1 y2, max y1 y2)
             else
-                DiagonalLine
+                DiagonalLine (min x1 x2, min y1 y2) (max x1 x2, max y1 y2)
     where
         numbers :: [Int]
         numbers = map read . words . map symbolToSpace $ s
@@ -62,5 +62,26 @@ main_5_1 = do
     let answer = solve ls
     print answer
 
-main_5_2 :: IO ()
-main_5_2 = return ()
+-- part 2
+
+gen :: Line -> [Point]
+gen (HorizontalLine (x1, x2) y)         = [(x,y) | x <- [x1..x2]]
+gen (VerticalLine x (y1, y2))           = [(x,y) | y <- [y1..y2]]
+gen (DiagonalLine (x1, y1) (x2, y2))    = zip [x1..x2] [y1..y2]
+
+genOverlap' :: Line -> Line -> [Point]
+genOverlap' a b = gen a `intersect` gen b
+
+solve' :: [Line] -> Int
+solve' ls = length . nub .  genAll' $ ls
+
+genAll' :: [Line] -> [Point]
+genAll' [] = []
+genAll' (l:ls) = (concat . map (genOverlap' l) $ ls) ++ genAll' ls
+
+main_5_2 = do
+    input <- lines <$> readFile "src/input_5.txt"
+    let ls = map parse input
+    let answer = solve' ls
+    print answer
+
