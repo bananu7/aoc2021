@@ -25,11 +25,11 @@ source-repository head
 
 library
   exposed-modules:
-      Day1
-      Day2
-      Day3
-      Day4
-      Day5
+      Day1,
+      Day2,
+      Day3,
+      Day4,
+      Day5,
       Lib
   other-modules:
       Paths_aoc2021
@@ -51,6 +51,7 @@ executable aoc2021-exe
       aoc2021
     , array
     , base >=4.7 && <5
+    , containers
   default-language: Haskell2010
 
 test-suite aoc2021-test

@@ -37,6 +37,7 @@ executables:
     - -O2
     dependencies:
     - aoc2021
+    - containers
 
 tests:
   aoc2021-test:
