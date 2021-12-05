@@ -1,4 +1,4 @@
-module Day5 (main_5_1, main_5_2) where
+module Day5 (main_5_1, main_5_2, rangeOverlap) where
 
 import Data.Array
 import Control.Monad.ST
@@ -9,16 +9,7 @@ import Debug.Trace
 -- array                   :: (Ix a) => (a,a) -> [(a,b)] -> Array a b
 
 type Point = (Int, Int)
-type Seabed = Array Point Int
-
 data Line = HorizontalLine (Int, Int) Int | VerticalLine Int (Int, Int) | DiagonalLine deriving (Eq, Show)
-
-showSeabed :: Seabed -> String
-showSeabed = unlines . map (concat . map show) . splitn . elems
-
-splitn [] = []
-splitn xs = (take 11 $ xs) : (splitn $ drop 11 xs)
-
 
 parse :: String -> Line
 parse s = 
@@ -36,43 +27,60 @@ parse s =
 
         symbolToSpace x = if isDigit x then x else ' '
 
-emptySeabed :: Point -> Seabed
-emptySeabed (sx, sy) = array ((0,0), (sx, sy)) [((x,y), 0) | x <- [0..sx], y <- [0..sy]]
+countOverlap :: Line -> Line -> Int
+countOverlap (HorizontalLine (x1, x2) y1) (HorizontalLine (x3, x4) y2) = 
+    if y1 /= y2 then 0 else rangeOverlap x1 x2 x3 x4
 
-mark :: Line -> Seabed -> Seabed
-mark (HorizontalLine (x1,x2) y) b = markPoints [(x,y) | x <- [x1..x2]] b
-mark (VerticalLine x (y1, y2)) b = markPoints [(x,y) | y <- [y1..y2]] b
-mark DiagonalLine b = b
+countOverlap (VerticalLine x1 (y1, y2)) (VerticalLine x2 (y3, y4)) = 
+    if x1 /= x2 then 0 else rangeOverlap y1 y2 y3 y4
 
-markPoints :: [Point] -> Seabed -> Seabed
-markPoints ps b0 = foldl (\b p -> markPoint p b) b0 ps
+countOverlap (VerticalLine x (y1, y2)) (HorizontalLine (x1, x2) y) = 
+    if x `between` (x1,x2) && y `between` (y1, y2) then 1 else 0
 
-markPoint :: Point -> Seabed -> Seabed
-markPoint p b = let v = b!p in b // [(p, v + 1)]
+countOverlap (HorizontalLine (x1, x2) y) (VerticalLine x (y1, y2)) = 
+    if x `between` (x1,x2) && y `between` (y1, y2) then 1 else 0
 
-count :: Seabed -> Int
-count = length . filter (>= 2) . elems
+countOverlap _ _ = 0
 
-markM bed l = do
-    b <- readSTRef bed
-    let b' = mark l b
-    writeSTRef bed b'
+{-
+genOverlap :: Line -> Line -> [Point]
+genOverlap (HorizontalLine (x1, x2) y1) (HorizontalLine (x3, x4) y2) = 
+    if y1 /= y2 then 0 else genRangeOverlap x1 x2 x3 x4
+
+genOverlap (VerticalLine x1 (y1, y2)) (VerticalLine x2 (y3, y4)) = 
+    if x1 /= x2 then 0 else genPointsVertical x1 y1 y2 y3 y4
+
+genOverlap (VerticalLine x (y1, y2)) (HorizontalLine (x1, x2) y) = 
+    if x `between` (x1,x2) && y `between` (y1, y2) then [(x, y)]
+
+genOverlap (HorizontalLine (x1, x2) y) (VerticalLine x (y1, y2)) = 
+    if x `between` (x1,x2) && y `between` (y1, y2) then [(x, y)] else []
+
+genPointsVertical 
+
+genOverlap _ _ = []
+-}
+
+between a (b,c) = a >= b && a <= c
+rangeOverlap a b c d = 
+    if b >= c && b <= d then
+        if a < c then b-c+1 else b-a+1
+    else
+        if a >= c && a <= d then
+            d-a+1
+        else
+            if d <= b && c >= a then
+                d-c+1
+            else
+                0
 
 solve :: [Line] -> Int
-solve ls = runST $ do 
-    bed <- newSTRef $ emptySeabed (1000,1000)
-
-    mapM_ (markM bed) ls
-
-    --answer <- count . (\b -> trace (showSeabed b) b) <$> readSTRef bed
-    --answer <- count <$> readSTRef bed
-
-    return 42
+solve [] = 0
+solve (l:ls) = sum (map (countOverlap l) ls) + solve ls
 
 main_5_1 = do
     input <- lines <$> readFile "src/input_5.txt"
     let ls = map parse input
-    --print ls
     let answer = solve ls
     print answer
 
