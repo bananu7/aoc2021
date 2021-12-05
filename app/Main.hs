@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import Day5
 
 main :: IO ()
-main = mempty
+main = main_5_1
