@@ -33,6 +33,7 @@ library
       Day5alt
       Day6
       Day7
+      Day8
       Lib
   other-modules:
       Paths_aoc2021
