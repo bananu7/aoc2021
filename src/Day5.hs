@@ -1,5 +1,4 @@
---module Day5 (main_5_1, main_5_2, rangeOverlap) where
-module Day5 where
+module Day5 (main_5_1, main_5_2, parse, gen, Point(..), Line(..)) where
 
 import Data.Char (isDigit)
 import Data.List (nub, intersect)

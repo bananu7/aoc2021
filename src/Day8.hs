@@ -1,4 +1,4 @@
-module Day8 where
+module Day8 (main_8_1, main_8_2) where
 
 import qualified Data.Map as M
 

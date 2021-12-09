@@ -1,4 +1,4 @@
-module Day6 where
+module Day6 (main_6_1) where
 
 import qualified Data.Map.Strict as M
 

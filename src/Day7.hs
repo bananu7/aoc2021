@@ -1,4 +1,4 @@
-module Day7 where
+module Day7 (main_7) where
 
 
 parse :: String -> [Int]

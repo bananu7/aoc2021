@@ -1,4 +1,4 @@
-module Day5alt where
+module Day5alt (main_5_1_alt) where
 
 import Day5 (Point, Line(..), parse, gen)
 
