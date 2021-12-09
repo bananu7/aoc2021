@@ -31,11 +31,9 @@ printArr a = do
             putStr . show $ a ! (x, y)
 
 solve :: Board -> Int
-solve a = sum . map ((+1) . (a!)) $ lows
-    where
-        (sx, sy) = size a
+solve a = sum . map ((+1) . (a!)) . lows $ a
 
-        lows = filter (isLow a) [(x,y) | x <- [0..sx], y <- [0..sy]]
+lows a = filter (isLow a) (indices a)
 
 isLow a (x,y) = all (==True) . map check $ [(x,y-1), (x-1,y), (x,y+1), (x+1,y)]
     where
@@ -46,7 +44,6 @@ isLow a (x,y) = all (==True) . map check $ [(x,y-1), (x-1,y), (x,y+1), (x+1,y)]
             else
                 v < a ! p
 
-
 main_9_1 = do
     input <- readFile "src/input_9.txt"
     let a = toArr input
@@ -55,3 +52,27 @@ main_9_1 = do
 
 -- part 2
 
+up (px,py) = (px,py-1)
+down (px,py) = (px,py+1)
+left (px,py) = (px-1, py)
+right (px,py) = (px+1, py)
+
+
+basinPoints a p = nub $ p : (concat . map check $ [up p, down p, left p, right p])
+    where
+        check p' = 
+            if not $ (bounds a) `inRange` p' then
+                []
+            else
+                if (not $ a!p' == 9) && a!p' > a!p then basinPoints a p' else []
+
+solve2 a = product . take 3 . reverse . sort . map length . map (basinPoints a) . lows $ a
+
+
+-- 540540 too low
+
+main_9_2 = do
+    input <- readFile "src/input_9_test.txt"
+    let a = toArr input
+    print $ solve2 a
+    print $ reverse . sort . map length . map (basinPoints a) . lows $ a
