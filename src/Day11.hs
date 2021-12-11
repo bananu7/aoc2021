@@ -35,14 +35,27 @@ printArr a = do
 
 --
 
-neighbors :: P -> [P]
-neighbors (px,py) = [(px+dx,py+dy) | dx <- [-1, 0, 1], dy <- [-1, 0, 1], (dx,dy) /= (0,0)]
+neighbors :: Board -> P -> [P]
+neighbors b (px,py) = 
+    [(px+dx,py+dy) |
+     dx <- [-1, 0, 1],
+     dy <- [-1, 0, 1],
+     (dx,dy) /= (0,0),
+     (bounds b) `inRange` (px+dx,py+dy)
+     ]
 
 getTens :: Board -> [P]
 getTens b = map fst . filter ((== 10) . snd) . assocs $ b
 
 propagate :: P -> State Board ()
-propagate p = return ()
+propagate p = do
+    b <- get
+    let ns = map (\p -> (p, b!p + 1)) . neighbors b $ p
+    modify $ \b -> b // ns
+
+    let nsFlashing = map fst . filter ((== 10) . snd) $ ns
+    mapM_ propagate nsFlashing
+
 
 incAll :: Board -> Board
 incAll b = b // (map (fmap (+1)) . assocs $ b)
@@ -62,18 +75,27 @@ step b = flip runState b $ do
     mapM_ propagate tens
     state resetFlashes
 
+solve :: Int -> Board -> Int
+solve 0 b = 0
+solve n b = let (f, b') = step b in f + solve (n-1) b'
+
 main_11_1 = do
-    input <- readFile "src/input_11_test.txt"
+    input <- readFile "src/input_11.txt"
     let a = toArr input
-    printArr a
-
-    let (f, a') = step a
-    print f
-    printArr a'
-
-    let (f, a'') = step a'
-    print f
-    printArr a''
+    print $ solve 100 a
 
 
 --
+
+solve' :: Int -> Board -> Int
+solve' n b = if f == 100 then n else solve' (n+1) b'
+    where (f, b') = step b
+
+main_11_2 = do
+    input <- readFile "src/input_11.txt"
+    let a = toArr input
+    print $ solve' 1 a
+
+
+
+
