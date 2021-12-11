@@ -23,7 +23,7 @@ parseLine' _ (']':b) = Broken ']'
 parseLine' _ ('}':b) = Broken '}'
 parseLine' _ ('>':b) = Broken '>'
 
-parseLine' [] [] = Clean
+parseLine' [] [] = Clean 
 parseLine' a  [] = Incomplete a
 
 score :: Char -> Integer

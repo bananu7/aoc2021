@@ -1,4 +1,4 @@
-module Day9 where
+module Day9 (main_9_1, main_9_2) where
 
 import Data.Array.Unboxed
 import Data.Char
