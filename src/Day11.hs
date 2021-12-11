@@ -21,6 +21,18 @@ size a =
     in
         (sx,sy)
 
+printArr :: Board -> IO ()
+printArr a = do
+    let (sx,sy) = size a
+    mapM_ (printRow sx) $ [0..sy]
+    where
+        printRow sx y = do
+            mapM_ (\x -> printChar x y) [0..sx]
+            putStrLn ""
+        printChar x y =
+            putStr . show $ a ! (x, y)
+
+
 --
 
 neighbors :: P -> [P]
@@ -32,22 +44,36 @@ getTens b = map fst . filter ((== 10) . snd) . assocs $ b
 propagate :: P -> State Board ()
 propagate p = return ()
 
-incAll :: State Board ()
-incAll = return ()
+incAll :: Board -> Board
+incAll b = b // (map (fmap (+1)) . assocs $ b)
 
-resetFlashes :: State Board Int
-resetFlashes = return 0
+resetFlashes :: Board -> (Int, Board)
+resetFlashes b = (numFlashes, b')
+    where
+        b' = b // (map (fmap toZero) vals)
+        toZero x = if x >= 10 then 0 else x
+        numFlashes = length . filter ((>= 10) . snd) $ vals
+        vals = assocs b
 
 step :: Board -> (Int, Board)
 step b = flip runState b $ do
-    incAll
+    modify incAll
     tens <- getTens <$> get
     mapM_ propagate tens
-    resetFlashes
+    state resetFlashes
 
-main_9_1 = do
-    input <- readFile "src/input_9.txt"
+main_11_1 = do
+    input <- readFile "src/input_11_test.txt"
     let a = toArr input
-    return ()
+    printArr a
+
+    let (f, a') = step a
+    print f
+    printArr a'
+
+    let (f, a'') = step a'
+    print f
+    printArr a''
 
 
+--
