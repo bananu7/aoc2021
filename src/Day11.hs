@@ -51,7 +51,7 @@ propagate :: P -> State Board ()
 propagate p = do
     b <- get
     let ns = map (\p -> (p, b!p + 1)) . neighbors b $ p
-    modify $ \b -> b // ns
+    modify (// ns)
 
     let nsFlashing = map fst . filter ((== 10) . snd) $ ns
     mapM_ propagate nsFlashing
