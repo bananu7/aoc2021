@@ -46,32 +46,44 @@ main_12_1 = do
     --mapM_ print ps
 
 -- -----
-{-}
+
+-- Part 2 solution with the path being a map
+
 type Visited = M.Map Node Int
 
 neighborsU' :: Graph -> Visited -> Node -> [Node]
-neighborsU' g visited n = neighbors g n \\ cantgo
+neighborsU' g visited n = neighbors g n \\ ("start" : cantgo)
     where
-        cantgo = M.keys . M.filterWithKey unable $ visited
-        unable "end" = (>= 1)
-        unable "start" = (>= 1)
-        unable n = if (isUpper . head $ n) then const False else
-                    const (any (> 1) . M.elems $ visited)
+        cantgo = 
+            if (any ((> 1) . snd) small)
+                then map fst small
+                else []
+        small = filter (isLower . head . fst) . M.assocs $ visited
 
 paths' :: Visited -> Graph -> Node -> [Visited]
 paths' visited _ "end" = [M.insertWith (+) "end" 1 visited]
 paths' visited g n = visit
     where
-        visit = concat . map (paths' (M.insertWith (+) n 1 visited) g) $ ns
-        ns = neighborsU' g visited n
--}
+        visit = concat . map (paths' visited' g) $ ns
+        ns = neighborsU' g visited' n
+        visited' = M.insertWith (+) n 1 visited
+
+
+f xs = f' [] xs
+    where
+        f' a [] = a
+        f' a (x:xs) = f' (x:a) xs
+
+-- ------
+
+-- Part 2 solution with the path being a list
 
 hasDuplicates :: (Ord a) => [a] -> Bool
 hasDuplicates list = length list /= length set
   where set = Set.fromList list
 
-neighborsU' :: Graph -> [Node] -> Node -> [Node]
-neighborsU' g visited n = neighbors g n \\ ("start" : cantgo)
+neighborsU'' :: Graph -> [Node] -> Node -> [Node]
+neighborsU'' g visited n = neighbors g n \\ ("start" : cantgo)
     where
         cantgo = if hasDuplicates smallVisited then
             smallVisited
@@ -81,18 +93,21 @@ neighborsU' g visited n = neighbors g n \\ ("start" : cantgo)
         smallVisited = filter (all (== True) . map isLower) visited
 
 
-paths' :: [Node] -> Graph -> Node -> [Path]
-paths' visited _ "end" = ["end":visited]
-paths' visited g n = visit
+paths'' :: [Node] -> Graph -> Node -> [Path]
+paths'' visited _ "end" = ["end":visited]
+paths'' visited g n = visit
     where
-        visit = concat . map (paths' (n : visited) g) $ ns
-        ns = neighborsU' g (n : visited) n
+        visit = concat . map (paths'' (n : visited) g) $ ns
+        ns = neighborsU'' g (n : visited) n
 
 main_12_2 = do
     input <- lines <$> readFile "src/input_12.txt"
     let g = parseGraph input
     --print g
 
-    let ps = paths' [] g "start"
+    let ps = paths' mempty g "start"
     print $ length ps
+
+    let ps'' = paths'' mempty g "start"
+    print $ length ps''
     --mapM_ print ps
