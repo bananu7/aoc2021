@@ -68,12 +68,6 @@ paths' visited g n = visit
         ns = neighborsU' g visited' n
         visited' = M.insertWith (+) n 1 visited
 
-
-f xs = f' [] xs
-    where
-        f' a [] = a
-        f' a (x:xs) = f' (x:a) xs
-
 -- ------
 
 -- Part 2 solution with the path being a list
