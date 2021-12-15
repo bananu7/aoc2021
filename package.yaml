@@ -23,6 +23,8 @@ dependencies:
 - base >= 4.7 && < 5
 - array
 - mtl
+- containers
+- pqueue
 
 library:
   source-dirs: src
