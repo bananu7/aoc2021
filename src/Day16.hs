@@ -15,7 +15,11 @@ inputToBits = concat . map (pad . (\x -> showIntAtBase 2 intToDigit x "") . digi
 
 type Version = Int -- 3bits
 data Len = BinLen Int | PacketLen Int deriving (Show, Eq)
-data Packet = Packet4 Version Int | PacketOther Len Version [Packet] deriving (Show, Eq)
+type PType = Int
+
+data Packet =
+    Packet4 Version Int |
+    PacketOther Version PType Len  [Packet] deriving (Show, Eq)
 
 bitsToInt :: String -> Int
 bitsToInt = foldr step 0 . reverse
@@ -51,32 +55,64 @@ packet = do
     packId <- triple
     case packId of
         4 -> packet4 packVer
-        _ -> packetOther packVer
+        _ -> packetOther packVer packId
 
-packetOther :: Version -> Parser Packet
-packetOther v = do
+packetOther :: Version -> PType -> Parser Packet
+packetOther v t = do
     lengthTypeId <- bit
     if lengthTypeId == False then do
         len <- numN 15
-        subs <- many $ packet
-        return $ PacketOther (BinLen len) v subs
+        cs <- rept len
+        let Just subs = parseMaybe (many packet) cs
+        --subs <- many $ packet
+        return $ PacketOther v t (BinLen len) subs
     else do
         numSubs <- numN 11
-        subs <- many $ packet
-        return $ PacketOther (PacketLen numSubs) v subs
-
-zeroes = many $ char '0'
+        subs <- replicateM numSubs packet
+        return $ PacketOther v t (PacketLen numSubs) subs
 
 packet4 :: Version -> Parser Packet
 packet4 v = do
     numBits <- many (char '1' >> rept 4)
     lastNumBits <- char '0' >> rept 4
-    zeroes
     return $ Packet4 v (bitsToInt $ concat numBits ++ lastNumBits)
 
 test_1 = inputToBits "D2FE28"
 
-parse = parseTest (packet <* eof)
-parse4 = parseTest (packet4 42 <* eof)
-parseTriple = parseTest (triple >> triple <* eof)
+parsePacket = parseTest (packet)
+parseHex = parsePacket . inputToBits
+
+parsePacketM = runParser packet ""
+parseHexM = parsePacketM . inputToBits
+
+versionSum :: Packet -> Int
+versionSum (Packet4 v _) = v
+versionSum (PacketOther v _ _ ps) = v + (sum . map versionSum $ ps)
+
+main_16_1 = do
+    s <- readFile "src/input_16.txt"
+    let p = parseHexM s
+    case p of
+        Right p2 -> print $ versionSum p2
+        Left e -> print e
+
+--  --------
+
+eval :: Packet -> Int
+eval (Packet4 _ i) = i
+eval (PacketOther _ 0 _ ps) = sum . map eval $ ps
+eval (PacketOther _ 1 _ ps) = product . map eval $ ps
+eval (PacketOther _ 2 _ ps) = minimum . map eval $ ps
+eval (PacketOther _ 3 _ ps) = maximum . map eval $ ps
+eval (PacketOther _ 5 _ [a,b]) = if eval a > eval b then 1 else 0
+eval (PacketOther _ 6 _ [a,b]) = if eval a < eval b then 1 else 0
+eval (PacketOther _ 7 _ [a,b]) = if eval a == eval b then 1 else 0
+
+main_16_2 = do
+    s <- readFile "src/input_16.txt"
+    let p = parseHexM s
+    case p of
+        Right p2 -> print $ eval p2
+        Left e -> print e
+
 
