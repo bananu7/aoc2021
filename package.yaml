@@ -25,6 +25,7 @@ dependencies:
 - mtl
 - containers
 - pqueue
+- megaparsec
 
 library:
   source-dirs: src
