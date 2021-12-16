@@ -35,11 +35,6 @@ bit = do
         '1' -> return True
         _ -> error "wrong character"
 
-ibit = toI <$> bit
-    where
-        toI True = 1
-        toI False = 0
-
 rept :: Int -> Parser String
 rept n = replicateM n digitChar
 
