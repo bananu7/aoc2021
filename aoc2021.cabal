@@ -33,6 +33,8 @@ library
       Day14
       Day15
       Day16
+      Day17
+      Day18
       Day2
       Day3
       Day4
@@ -62,7 +64,7 @@ executable aoc2021-exe
       Paths_aoc2021
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -Wall
   build-depends:
       aoc2021
     , array
