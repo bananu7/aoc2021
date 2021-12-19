@@ -1,8 +1,13 @@
+{-# LANGUAGE TupleSections #-}
+
 module Day19 where
 
 import Data.List
 import qualified Data.Set as Set
+import qualified Data.Map.Strict as Map
 import Data.Maybe
+
+import Debug.Trace
 
 type P = (Int,Int,Int)
 type Scanner = [P]
@@ -70,21 +75,7 @@ commonDiffs' sa sb = catMaybes . map (combine dfb) $ dfa
         dfb = diffs' $ sb
 
 allCommonDiffs ss =
-    [ [(ss !! ia) `commonDiffs` (ss !! ib) | ib <- [0..length ss -1], ia < ib] | ia <- [0..length ss -1]]
-
--- n(n-1)/2 = Gk
--- n(n-1) = Gk * 2
--- n^2 - n = Gk * 2
-numDiffsToNumPoints 0 = 0
-numDiffsToNumPoints 1 = 2
-numDiffsToNumPoints 3 = 3
-numDiffsToNumPoints 6 = 4
-numDiffsToNumPoints 10 = 5
-numDiffsToNumPoints 15 = 6
-numDiffsToNumPoints 21 = 7
-numDiffsToNumPoints 28 = 8
-numDiffsToNumPoints 66 = 12
-numDiffsToNumPoints 325 = 26
+    [ [(ss !! ia) `commonDiffs` (ss !! ib) | ib <- [0..length ss -1]] | ia <- [0..length ss -1]]
 
 
 rots :: [P -> P]
@@ -153,30 +144,73 @@ rotNames = [
     ,"(-z,-y, -x)"
     ]
 
+rotsWithNames = zip rots rotNames
+
 neg :: P -> P
 neg (x,y,z) = (-x,-y,-z)
 
 findDNorm a b = findDNorm' a b rots rotNames
   where
-    findDNorm' _ _ [] _ = error "no matching rot"
+    findDNorm' _ _ [] _ = Nothing -- should never happen
     findDNorm' a b (f:rs) (n:rns) =
-        if f b == a || f (neg b) == a then n
+        if f b == a || f (neg b) == a
+            then Just (f,n)
             else findDNorm' a b rs rns
 
-findNorm a b = findDNorm da db
-    where
-        (((pa1,pa2), da), ((pb1, pb2), db)) = d
-        d = head $ commonDiffs' a b
+findNorm a b =
+    case commonDiffs' a b of
+        [] -> Nothing
+        (d:_) ->
+            let
+                (((pa1,pa2), da), ((pb1, pb2), db)) = d
+            in
+                findDNorm da db
 
 -- -----------------------------------------
 
+-- can't just do that because some don't have matches
+-- norm n = fst $ findNorm 0 n
+
+normAll :: [Scanner] -> Map.Map Int (P->P, String)
+normAll s = normAll' (Map.fromList [ (0, rotsWithNames !! 0) ]) 0
+    where
+        normAll' m toI =
+            if traceShow toI $ Map.size m == length s then m
+            else
+                normAll' m' ((toI+1) `mod` length s)
+            where
+                -- only normalize to "toI" if toI is already normalized
+                m' = if toI `Map.member` m 
+                        then foldl addNorm m successfulNormsToI
+                        else m
+
+                addNorm m (toI, i, (f,n)) = 
+                    Map.insert i (combine (m Map.! toI) (f,n)) m
+
+                combine (f1, n1) (f2, n2) = (f2.f1, n2 ++ " -> " ++ n1)
+
+                successfulNormsToI = catMaybes tryNormsToI
+                tryNormsToI = map (\i -> (toI,i,) <$> findNorm (s !! toI) (s !! i)) $ (traceShowId allIxesLeft)
+                allIxesLeft = filter (/= toI) . filter (\i -> i `Map.notMember` m) $ [0..length s - 1]
+
+
+{-
 norm 0 (x,y,z) = (x,y,z)     -- 0 is assumed norm
 norm 1 (x,y,z) = (-z, -x, y)
+norm 2 (x,y,z) = norm 3 (z, -x, y) -- go through 3
 norm 3 (x,y,z) = (y,x,z)
+norm 4 (x,y,z) = norm 3 (-x, -z, -y)
+npr
+norm 8 (x,y,z) = (-x,z,y)
+norm 9 (x,y,z) = (-x, -z, -y)
+norm 14 (x,y,z) = (x, -y, z)
+norm 16 (x,y,z) = (y,-z,-x)
+norm 20 (x,y,z) = (y, z, x)
+norm 21 (x,y,z) = (-z, x, y)
+norm 27 (x,y,z) = (y, -x, z)
 -- undef
 norm n (x,y,z) = (x,y,z)
-
-normN scanners = map (\(s,i) -> map (norm i) s) . zip scanners $ [0..]
+-}
 
 ss = do
     input <- filter (/= "") . lines <$> readFile "src/input_19.txt"
@@ -185,11 +219,10 @@ ss = do
 
 main_19 = do
     s <- ss
-
-    print $ length (s !! 0)
-    print . length . diffs $ (s !! 0)
-
-    print $ allCommonDiffs s
+    let m = normAll s
+    print "----"
+    print $ Map.size m
+    mapM_ (\(i, (f,n)) -> putStrLn $ show i ++ " : " ++ n) $ Map.assocs m
 
 -- s0 = +x, +y, +z
 
