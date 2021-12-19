@@ -160,19 +160,30 @@ findDNorm a b = findDNorm' a b rots rotNames
 findNorm a b =
     case commonDiffs' a b of
         [] -> Nothing
+        ds | length ds < 66 -> Nothing
         (d:_) ->
             let
                 (((pa1,pa2), da), ((pb1, pb2), db)) = d
+                Just (f,n) = findDNorm da db
+
+                delta = 
+                        if da == f db then
+                            --pa1 `diff` f pb1   -- or pa2-pb2
+                            pa2 `diff` f pb2
+                        else if da == f (neg db) then
+                            pa2 `diff` f pb1   -- or pa2-pb1
+                        else
+                            error "found norm F doesn't work!"
             in
-                findDNorm da db
+                Just (f,delta,n)
 
 -- -----------------------------------------
 
 -- can't just do that because some don't have matches
 -- norm n = fst $ findNorm 0 n
 
-normAll :: [Scanner] -> Map.Map Int (P->P, String)
-normAll s = normAll' (Map.fromList [ (0, rotsWithNames !! 0) ]) 0
+normAll :: [Scanner] -> Map.Map Int ([P->P], [P], String)
+normAll s = normAll' (Map.fromList [ (0, ([rots !! 0], [(0,0,0)], rotNames !! 0)) ]) 0
     where
         normAll' m toI =
             if traceShow toI $ Map.size m == length s then m
@@ -184,10 +195,10 @@ normAll s = normAll' (Map.fromList [ (0, rotsWithNames !! 0) ]) 0
                         then foldl addNorm m successfulNormsToI
                         else m
 
-                addNorm m (toI, i, (f,n)) = 
-                    Map.insert i (combine (m Map.! toI) (f,n)) m
+                addNorm m (toI, i, (f,d,n)) = 
+                    Map.insert i (combine (m Map.! toI) (f,d,n)) m
 
-                combine (f1, n1) (f2, n2) = (f2.f1, n2 ++ " -> " ++ n1)
+                combine (fs, ds, ns) (f, d, n2) = (f:fs, d:ds, n2 ++ " -> " ++ ns)
 
                 successfulNormsToI = catMaybes tryNormsToI
                 tryNormsToI = map (\i -> (toI,i,) <$> findNorm (s !! toI) (s !! i)) $ (traceShowId allIxesLeft)
@@ -213,16 +224,37 @@ norm n (x,y,z) = (x,y,z)
 -}
 
 ss = do
-    input <- filter (/= "") . lines <$> readFile "src/input_19.txt"
+    input <- filter (/= "") . lines <$> readFile "src/input_19_test.txt"
     let s = filter (/= []) $ parseScanners input [] []
     return s
 
+applyAll s m =
+    map (\i -> apply (m Map.! i) (s !! i)) [0..length s - 1]
+
+add (ax,ay,az) (bx,by,bz) = (ax+bx, ay+by, az+bz)
+
+apply :: ([P->P], [P], String) -> Scanner -> Scanner
+apply ([], [], _) s = s
+apply ((f:fs), (d:ds), _) s = apply (fs,ds,"") s'
+    where
+        s' = map ((`add` d) . f) s
+
+
+-- (438,439,-723)
+
+-- 339 too high
+-- 333 too high
 main_19 = do
     s <- ss
     let m = normAll s
     print "----"
     print $ Map.size m
-    mapM_ (\(i, (f,n)) -> putStrLn $ show i ++ " : " ++ n) $ Map.assocs m
+
+    let s' = applyAll s m
+    mapM_ (print) $ sort . nub . concat $ s'
+    putStrLn $ "final answer: " ++ (show . length . nub . concat $ s')
+
+    --mapM_ (\(i, (f,d,n)) -> putStrLn $ show i ++ " : " ++ n ++ " D :" ++ show d) $ Map.assocs m
 
 -- s0 = +x, +y, +z
 
