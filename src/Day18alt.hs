@@ -38,22 +38,22 @@ explode t =
 
         explode' n (N a b) =
             case explode' (n+1) a of
-                Just (lv, a', Just rv) -> Just (lv, N a' (addR rv b), Nothing)
+                Just (lv, a', Just rv) -> Just (lv, N a' (addToLeftmostLeaf rv b), Nothing)
                 Just (lv, a', Nothing) -> Just (lv, N a' b, Nothing)
 
                 Nothing -> case explode' (n+1) b of
-                    Just (Just lv, b', rv) -> Just (Nothing, N (addL lv a) b', rv)
+                    Just (Just lv, b', rv) -> Just (Nothing, N (addToRightmostLeaf lv a) b', rv)
                     Just (Nothing, b', rv) -> Just (Nothing, N a b', rv)
                     Nothing -> Nothing
 
 
-addL :: Int -> Tree -> Tree
-addL v (L x) = L $ x + v
-addL v (N a b) = N a (addL v b)
+addToRightmostLeaf :: Int -> Tree -> Tree
+addToRightmostLeaf v (L x) = L $ x + v
+addToRightmostLeaf v (N a b) = N a (addToRightmostLeaf v b)
 
-addR :: Int -> Tree -> Tree
-addR v (L x) = L $ x + v
-addR v (N a b) = N (addR v a) b
+addToLeftmostLeaf :: Int -> Tree -> Tree
+addToLeftmostLeaf v (L x) = L $ x + v
+addToLeftmostLeaf v (N a b) = N (addToLeftmostLeaf v a) b
 
 -- If any regular number is 10 or greater, the leftmost such regular number splits.
 split :: Tree -> Either Tree Tree
