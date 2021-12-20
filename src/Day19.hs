@@ -38,7 +38,8 @@ diff (ax,ay,az) (bx,by,bz) = (ax-bx, ay-by, az-bz)
 -- use for diffs
 unbased (ax,ay,az) = (sort . map abs $ [ax,ay,az])
 -- use for diffs
-diffComp a b = unbased a == unbased b
+diffComp a b = any (==True) . map (\f -> a == f b) $ rots
+    --unbased a == unbased b
 
 diffs s = [a `diff` b | a <- s, b <- s, a /= b, a > b]
 
@@ -224,7 +225,7 @@ norm n (x,y,z) = (x,y,z)
 -}
 
 ss = do
-    input <- filter (/= "") . lines <$> readFile "src/input_19_test.txt"
+    input <- filter (/= "") . lines <$> readFile "src/input_19.txt"
     let s = filter (/= []) $ parseScanners input [] []
     return s
 
